@@ -13,7 +13,7 @@ This chatbot is designed to integrate with **n8n workflows** via webhook URLs, m
 |Green (Dark Mode)   | Green (night mode) Chatbot UI <img >|
 |  Dark theme  | Dark Chatbot UI <img |
 
-Lightweight HTML-based AI assistant widget for WordPress. Compatible with OpenRouter API, customizable prompts, and visual themes included.
+Lightweight HTML-based AI assistant widget for WordPress. Compatible with N8N, customizable , and visual themes included.
 
 ## 🚀 Features  
 
