@@ -7,7 +7,8 @@ This chatbot is designed to integrate with **n8n workflows** via webhook URLs, m
 
 | Theme  | Preview |
 |--------|---------|
-|  Blue  | Blue Chatbot UI <img width="1280" height="720" alt="blue1" src="https://github.com/user-attachments/assets/abb14ae9-ff9e-4d2f-a028-9098879df73d" />|
+|  Blue  | Blue Chatbot UI <img width="2560" height="1440" alt="blue2" src="https://github.com/user-attachments/assets/4073edf1-80ca-474a-b566-269148cb2326" />
+|
 |red-dark  | red night Chatbot UI <img width="1920" height="1080" alt="redui" src="https://github.com/user-attachments/assets/8edf3d3d-9ea9-44f2-a716-03b67313795e" />
 |
 |Green (Dark Mode)   | Green (night mode) Chatbot UI <img >|
