@@ -3,6 +3,18 @@
 A customizable, responsive **AI-powered chatbot widget** built in a single HTML file.  
 This chatbot is designed to integrate with **n8n workflows** via webhook URLs, making it easy to embed automation and AI responses into any website (WordPress, static sites, or custom apps).  
 
+# 📷 UI Previews
+
+| Theme  | Preview |
+|--------|---------|
+|  Blue  | Blue Chatbot UI <img width="1280" height="720" alt="blue1" src="https://github.com/user-attachments/assets/abb14ae9-ff9e-4d2f-a028-9098879df73d" />|
+|red-dark  | red night Chatbot UI <img width="1920" height="1080" alt="redui" src="https://github.com/user-attachments/assets/8edf3d3d-9ea9-44f2-a716-03b67313795e" />
+|
+|Green (Dark Mode)   | Green (night mode) Chatbot UI <img >|
+|  Dark theme  | Dark Chatbot UI <img |
+
+Lightweight HTML-based AI assistant widget for WordPress. Compatible with OpenRouter API, customizable prompts, and visual themes included.
+
 ## 🚀 Features  
 
 - ✅ **Direct n8n integration** (via webhook URL)  
