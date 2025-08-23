@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chatbot - N8N Integration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+  <!-- DOMPurify for safe HTML sanitization -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+  <style>
+    /* === CSS CUSTOM PROPERTIES === */
+    :root {
+      --primary-color: #dc2626;
+      --primary-gradient: linear-gradient(135deg, #dc2626, #b91c1c);
+      --secondary-color: #ef4444;
+      --background-dark: #0f0f10;
+      --background-secondary: #1a1a2e;
+      --surface-color: #2a2a2e;
+      --surface-lighter: #3a3a3e;
+      --input-background: #1b1b1e;
+      --text-primary: #fff;
+      --text-secondary: #aaa;
+      --text-muted: #888;
+      --border-color: #444;
+      --success-color: #4ade80;
+      --error-color: #ef4444;
+      --shadow-primary: 0 10px 30px rgba(0, 0, 0, 0.5);
+      --shadow-button: 0 4px 10px rgba(220, 38, 38, 0.3);
+      --border-radius: 20px;
+      --border-radius-small: 8px;
+      --border-radius-message: 18px;
+      --font-family: 'Inter', sans-serif;
+      --transition-smooth: all 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940);
+      --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      --chat-width: 360px;
+      --chat-height: 80vh;
+      --chat-max-height: 90vh;
+    }
+
+    /* === BASE RESET === */
+    .chatbot-widget {
+      all: initial;
+      box-sizing: border-box;
+      font-family: var(--font-family);
+      position: fixed;
+      z-index: 2147483647;
+      pointer-events: none;
+    }
+
+    .chatbot-widget *,
+    .chatbot-widget *::before,
+    .chatbot-widget *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    .chatbot-widget button,
+    .chatbot-widget input,
+    .chatbot-widget [tabindex] {
+      pointer-events: auto;
+    }
+
+    /* === CHAT CONTAINER === */
+    .chat-container {
+      position: fixed;
+      bottom: 15px;
+      right: 20px;
+      width: var(--chat-width);
+      height: var(--chat-height);
+      max-height: var(--chat-max-height);
+      background: linear-gradient(135deg, var(--background-dark), var(--background-secondary));
+      color: var(--text-primary);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-primary);
+      overflow: hidden;
+      z-index: 2147483646;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition-bounce), opacity 0.3s ease;
+      pointer-events: auto;
+      transform-origin: bottom right;
+      visibility: visible;
+    }
+
+    .chat-container.hidden {
+      transform: translateY(20px) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    /* === CHAT HEADER === */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: linear-gradient(90deg, #1a1a1d, var(--surface-color));
+      font-weight: 600;
+      font-size: 16px;
+      border-bottom: 1px solid var(--surface-color);
+      flex-shrink: 0;
+    }
+
+    .chat-header .avatar {
+      width: 36px;
+      height: 36px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      transition: transform 0.2s ease;
+      animation: pulseAvatar 4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    }
+
+    .chat-header .avatar:hover {
+      transform: scale(1.05);
+      animation: none;
+    }
+
+    .chat-header .avatar svg {
+      width: 20px;
+      height: 20px;
+      fill: rgba(255, 255, 255, 0.9);
+    }
+
+    .chat-header .avatar::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      background: var(--success-color);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      border: 2px solid #1a1a1d;
+    }
+
+    @keyframes pulseAvatar {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .chat-header .header-buttons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .header-btn {
+      background: none;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .header-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      transition: transform 0.15s ease;
+    }
+
+    .header-btn:hover {
+      background-color: rgba(220, 38, 38, 0.15);
+      transform: scale(1.1);
+      color: var(--secondary-color);
+    }
+
+    .header-btn:active {
+      transform: scale(0.92);
+      background-color: rgba(220, 38, 38, 0.25);
+    }
+
+    .header-btn:focus {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    /* === CHAT MESSAGES === */
+    .chat-messages {
+      flex: 1;
+      min-height: 0;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+      background: #141416;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) #141416;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: var(--primary-gradient);
+      border-radius: 3px;
+      transition: background 0.3s ease;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background-color: #1a1a1d;
+      border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(var(--secondary-color), #f87171);
+    }
+
+    /* === MESSAGE CONTAINERS === */
+    .message-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      animation: slideInMessage 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      margin-bottom: 8px;
+    }
+
+    .message-container.bot {
+      justify-content: flex-start;
+    }
+
+    .message-container.user {
+      justify-content: flex-end;
+    }
+
+    .message-container.typing {
+      margin-bottom: 0;
+    }
+
+    .message-container.error {
+      justify-content: center;
+    }
+
+    @keyframes slideInMessage {
+      from { 
+        opacity: 0; 
+        transform: translateY(20px) scale(0.8); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+      }
+    }
+
+    .message-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+    }
+
+    .message-avatar.bot {
+      margin-right: 10px;
+      background: var(--primary-gradient);
+      box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+    }
+
+    .message-avatar.user {
+      margin-left: 10px;
+      background: linear-gradient(135deg, var(--surface-color), var(--surface-lighter));
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .message-avatar svg {
+      width: 18px;
+      height: 18px;
+      fill: rgba(255, 255, 255, 0.9);
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: var(--border-radius-message);
+      font-size: 14px;
+      position: relative;
+      line-height: 1.4;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .message.bot {
+      background-color: var(--surface-color);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.user {
+      background: var(--primary-gradient);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.error {
+      background-color: var(--error-color);
+      color: white;
+      max-width: 90%;
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    /* === ERROR MESSAGE STYLES === */
+    .error-message {
+      background: linear-gradient(135deg, var(--error-color), #dc2626);
+      color: white;
+      border-radius: var(--border-radius-message);
+      padding: 12px 16px;
+      margin: 8px auto;
+      max-width: 90%;
+      text-align: center;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      animation: shake 0.5s ease-in-out;
+    }
+
+    .retry-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 8px;
+      transition: background 0.2s ease;
+    }
+
+    .retry-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    /* === MARKDOWN CONTENT STYLES === */
+    .message .markdown-content h1,
+    .message .markdown-content h2,
+    .message .markdown-content h3,
+    .message .markdown-content h4,
+    .message .markdown-content h5,
+    .message .markdown-content h6 {
+      margin: 8px 0 4px 0;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .message .markdown-content h1 { font-size: 18px; }
+    .message .markdown-content h2 { font-size: 16px; }
+    .message .markdown-content h3 { font-size: 15px; }
+    .message .markdown-content h4,
+    .message .markdown-content h5,
+    .message .markdown-content h6 { font-size: 14px; }
+
+    .message .markdown-content p {
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+
+    .message .markdown-content ul,
+    .message .markdown-content ol {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    .message .markdown-content li {
+      margin: 2px 0;
+    }
+
+    .message .markdown-content code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .message .markdown-content pre {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 8px 0;
+      border-left: 3px solid var(--primary-color);
+    }
+
+    .message .markdown-content pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .message .markdown-content blockquote {
+      border-left: 3px solid var(--primary-color);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .message .markdown-content a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+
+    .message .markdown-content a:hover {
+      color: var(--secondary-color);
+    }
+
+    .message .markdown-content strong,
+    .message .markdown-content b {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .message .markdown-content em,
+    .message .markdown-content i {
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    .message .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border-color);
+      margin: 12px 0;
+    }
+
+    .message .markdown-content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+
+    .message .markdown-content th,
+    .message .markdown-content td {
+      border: 1px solid var(--border-color);
+      padding: 4px 8px;
+      text-align: left;
+    }
+
+    .message .markdown-content th {
+      background: var(--surface-lighter);
+      font-weight: 600;
+    }
+
+    .timestamp {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      text-align: right;
+      opacity: 0;
+      animation: fadeInTimestamp 0.5s ease 0.2s forwards;
+    }
+
+    .message.bot .timestamp {
+      text-align: left;
+    }
+
+    @keyframes fadeInTimestamp {
+      to { opacity: 1; }
+    }
+
+    /* === TYPING INDICATOR === */
+    .typing {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 4px;
+      width: auto;
+      min-width: 60px;
+      height: 24px;
+      padding: 8px 12px;
+    }
+
+    .typing span {
+      width: 6px;
+      height: 6px;
+      background-color: var(--text-secondary);
+      border-radius: 50%;
+      display: inline-block;
+      animation: typingBounce 1.4s infinite ease-in-out;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .typing span:nth-child(1) { animation-delay: 0s; }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { 
+        transform: translateY(0); 
+        opacity: 0.7; 
+      }
+      30% { 
+        transform: translateY(-8px); 
+        opacity: 1; 
+      }
+    }
+
+    /* === CHAT INPUT === */
+    .chat-input {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background-color: var(--input-background);
+      border-top: 1px solid var(--surface-color);
+      flex-shrink: 0;
+      position: relative;
+      transition: var(--transition-smooth);
+    }
+
+    .chat-input input {
+      flex: 1;
+      background: var(--surface-color);
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      padding: 12px 16px;
+      border-radius: 24px;
+      transition: var(--transition-smooth);
+      min-width: 0;
+    }
+
+    .chat-input input:focus {
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.7);
+      background-color: #333336;
+    }
+
+    .chat-input input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .chat-input input.shake {
+      animation: shake 0.3s ease-in-out;
+    }
+
+    /* === SEND BUTTON === */
+    .send-btn {
+      background: var(--primary-gradient);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      margin-left: 10px;
+      box-shadow: var(--shadow-button);
+      transition: var(--transition-bounce);
+      opacity: 1;
+      pointer-events: auto;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover:not(:disabled) {
+      transform: scale(1.08);
+      box-shadow: 0 6px 15px rgba(220, 38, 38, 0.5);
+    }
+
+    .send-btn:active:not(:disabled) {
+      transform: scale(0.95);
+      box-shadow: 0 2px 5px rgba(220, 38, 38, 0.4);
+    }
+
+    .send-btn:focus {
+      outline: 2px solid var(--text-primary);
+      outline-offset: 2px;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.6;
+      pointer-events: none;
+      cursor: not-allowed;
+      transform: scale(1);
+    }
+
+    .send-btn.loading svg {
+      animation: pulseSendIcon 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulseSendIcon {
+      0%, 100% { 
+        transform: scale(1); 
+        opacity: 1; 
+      }
+      50% { 
+        transform: scale(0.9); 
+        opacity: 0.7; 
+      }
+    }
+
+    .send-btn svg {
+      fill: var(--text-primary);
+      width: 20px;
+      height: 20px;
+      transition: transform 0.2s ease;
+    }
+
+    /* === FLOATING BUTTON === */
+    .floating-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 6px 15px rgba(220, 38, 38, 0.5);
+      cursor: pointer;
+      transition: var(--transition-bounce);
+      z-index: 2147483645;
+      animation: pulseButton 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      border: none;
+      outline: none;
+      pointer-events: auto;
+    }
+
+    .floating-button:hover {
+      transform: scale(1.12);
+      box-shadow: 0 8px 20px rgba(220, 38, 38, 0.7);
+      animation: none;
+    }
+
+    .floating-button:active {
+      transform: scale(0.95);
+      box-shadow: 0 3px 8px rgba(220, 38, 38, 0.4);
+    }
+
+    .floating-button:focus-visible {
+      box-shadow: 0 6px 15px rgba(220, 38, 38, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.8);
+    }
+
+    .floating-button.active svg {
+      animation: rotateIcon 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    }
+
+    .floating-button:not(.active) svg {
+      transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      transform: rotate(0deg);
+    }
+
+    .floating-button svg {
+      fill: var(--text-primary);
+      width: 26px;
+      height: 26px;
+    }
+
+    @keyframes rotateIcon {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(135deg); }
+    }
+
+    @keyframes pulseButton {
+      0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 6px 15px rgba(220, 38, 38, 0.5); 
+      }
+      50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.7), 0 0 0 12px rgba(220, 38, 38, 0.1); 
+      }
+    }
+
+    /* === WELCOME MESSAGE === */
+    .welcome-message {
+      text-align: center;
+      padding: 20px;
+      background: rgba(42, 42, 46, 0.2);
+      border-radius: 30px;
+      margin-bottom: 10px;
+      border: 3px solid transparent;
+      box-shadow:
+        0 0 0 1px rgba(220, 38, 38, 0.3),
+        0 0 10px rgba(220, 38, 38, 0.5),
+        0 0 20px rgba(185, 28, 28, 0.3);
+      animation:
+        scaleInPulse 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both,
+        modernPulseBorder 2.5s infinite ease-in-out;
+    }
+
+    @keyframes modernPulseBorder {
+      0%, 100% {
+        box-shadow:
+          0 0 0 1px rgba(220, 38, 38, 0.3),
+          0 0 10px rgba(220, 38, 38, 0.5),
+          0 0 20px rgba(185, 28, 28, 0.3);
+      }
+      50% {
+        box-shadow:
+          0 0 0 1px rgba(220, 38, 38, 0.4),
+          0 0 15px rgba(220, 38, 38, 0.7),
+          0 0 35px rgba(185, 28, 28, 0.5),
+          0 0 50px rgba(220, 38, 38, 0.2);
+      }
+    }
+
+    @keyframes scaleInPulse {
+      0% { 
+        opacity: 0; 
+        transform: scale(0.8); 
+      }
+      50% { 
+        transform: scale(1.03); 
+      }
+      100% { 
+        opacity: 1; 
+        transform: scale(1); 
+      }
+    }
+
+    .welcome-message h3 {
+      margin-bottom: 8px;
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .welcome-message p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* === MOBILE RESPONSIVE === */
+    @media (max-width: 768px) {
+      :root {
+        --chat-width: 95vw;
+        --chat-height: 85vh;
+      }
+
+      .chat-container {
+        width: var(--chat-width);
+        height: var(--chat-height);
+        bottom: 10px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        max-height: 60vh;
+        z-index: 2147483646;
+        transform-origin: bottom center;
+      }
+
+      .chat-container.hidden {
+        transform: translateX(-50%) translateY(20px) scale(0.95);
+      }
+
+      .chat-header {
+        padding: 14px 12px;
+        font-size: 15px;
+      }
+
+      .chat-header .avatar {
+        width: 32px;
+        height: 32px;
+      }
+
+      .chat-header .avatar svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .chat-messages {
+        padding: 12px;
+        gap: 10px;
+      }
+
+      .message {
+        font-size: 13px;
+        padding: 10px 14px;
+        max-width: 85%;
+      }
+
+      .chat-input {
+        padding: 10px 12px;
+      }
+
+      .chat-input input {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+
+      .send-btn {
+        width: 40px;
+        height: 40px;
+        margin-left: 8px;
+      }
+
+      .send-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .floating-button {
+        bottom: 16px;
+        right: 16px;
+        width: 50px;
+        height: 50px;
+      }
+
+      .floating-button svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .message-avatar {
+        width: 26px;
+        height: 26px;
+      }
+
+      .message-avatar svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .welcome-message {
+        padding: 15px;
+        border-radius: 24px;
+      }
+
+      .welcome-message p {
+        font-size: 12px;
+      }
+
+      .typing {
+        width: auto;
+        min-width: 50px;
+        height: 20px;
+        padding: 6px 10px;
+      }
+
+      .typing span {
+        width: 5px;
+        height: 5px;
+      }
+    }
+
+    /* === REDUCED MOTION === */
+    @media (prefers-reduced-motion: reduce) {
+      .chatbot-widget * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Chatbot Widget Container -->
+  <div class="chatbot-widget">
+    <!-- Chatbot Container -->
+    <div class="chat-container hidden" id="chatContainer" role="dialog" aria-labelledby="chatTitle" aria-describedby="chatDescription">
+      <div class="chat-header">
+        <div class="avatar" role="img" aria-label="Chatbot avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <path d="M352 64C352 46.3 337.7 32 320 32C302.3 32 288 46.3 288 64L288 128L192 128C139 128 96 171 96 224L96 448C96 501 139 544 192 544L448 544C501 544 544 501 544 448L544 224C544 171 501 128 448 128L352 128L352 64zM160 432C160 418.7 170.7 408 184 408L216 408C229.3 408 240 418.7 240 432C240 445.3 229.3 456 216 456L184 456C170.7 456 160 445.3 160 432zM280 432C280 418.7 290.7 408 304 408L336 408C349.3 408 360 418.7 360 432C360 445.3 349.3 456 336 456L304 456C290.7 456 280 445.3 280 432zM400 432C400 418.7 410.7 408 424 408L456 408C469.3 408 480 418.7 480 432C480 445.3 469.3 456 456 456L424 456C410.7 456 400 445.3 400 432zM224 240C250.5 240 272 261.5 272 288C272 314.5 250.5 336 224 336C197.5 336 176 314.5 176 288C176 261.5 197.5 240 224 240zM368 288C368 261.5 389.5 240 416 240C442.5 240 464 261.5 464 288C464 314.5 442.5 336 416 336C389.5 336 368 314.5 368 288zM64 288C64 270.3 49.7 256 32 256C14.3 256 0 270.3 0 288L0 384C0 401.7 14.3 416 32 416C49.7 416 64 401.7 64 384L64 288zM608 256C590.3 256 576 270.3 576 288L576 384C576 401.7 590.3 416 608 416C625.7 416 640 401.7 640 384L640 288C640 270.3 625.7 256 608 256z"/>
+          </svg>
+        </div>
+        <div id="chatTitle">AI Assistant</div>
+        <div class="header-buttons">
+          <button class="header-btn" id="clearBtn" aria-label="Clear conversation" tabindex="0">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+          <button class="header-btn" id="closeBtn" aria-label="Close chat" tabindex="0">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat" role="log" aria-live="polite" aria-label="Chat conversation">
+        <div id="chatDescription" class="sr-only">Chat conversation with the assistant</div>
+      </div>
+
+      <div class="chat-input" role="region" aria-label="Message input area">
+        <input 
+          type="text" 
+          id="input" 
+          placeholder="Type your message..." 
+          aria-label="Type your message"
+          maxlength="1000"
+          autocomplete="off"
+          tabindex="0"
+        />
+        
+        <button class="send-btn" id="sendBtn" aria-label="Send message" tabindex="0">
+          <svg viewBox="0 0 24 24">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Toggle Button -->
+    <button class="floating-button" id="floatingButton" aria-label="Toggle chat" tabindex="0">
+      <svg viewBox="0 0 24 24">
+        <path d="M20 2H4C2.9 2 2 2.9 2 4v20l4-4h14c1.1 0 2-0.9 2-2V4c0-1.1-0.9-2-2-2zM6 11h12v2H6v-2zm6-6h6v2h-6V5zm-6 0h4v2H6V5z"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    // === CONFIGURATION ===
+    const CONFIG = {
+      // N8N Webhook Configuration
+      N8N: {
+        WEBHOOK_URL: 'YOUR_N8N_WEBHOOK_URL', // Replace with your N8N webhook URL
+        TIMEOUT: 30000,
+        METHOD: 'POST',
+        CHAT_INPUT_KEY: 'chatInput',        // n8n expects this key for message
+        SESSION_KEY: 'sessionId',           // n8n expects this key for session
+        ACTION_KEY: 'action'                // n8n expects this key for action type
+      },
+      
+      // UI Configuration
+      WELCOME_MESSAGE: {
+        sender: 'bot',
+        text: `<div class="welcome-message">
+                 <h3>Welcome to AI Assistant!</h3>
+                 <p>I'm here to help you with any questions or tasks. What can I assist you with today? 🤖</p>
+               </div>`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      },
+      
+      // Error Messages
+      ERRORS: {
+        WEBHOOK_MISSING: 'N8N webhook URL is not configured. Please set your webhook URL in the CONFIG.',
+        NETWORK_ERROR: 'Unable to connect to service. Please check your internet connection.',
+        TIMEOUT_ERROR: 'Request timed out. Please try again.',
+        RATE_LIMIT: 'Too many requests. Please wait a moment before trying again.',
+        GENERIC_ERROR: 'Something went wrong. Please try again.',
+        PARSING_ERROR: 'Unable to process the response. Please try again.',
+        CORS_ERROR: 'Connection blocked. Please ensure your domain is added to the CORS settings in your n8n Chat Trigger node.'
+      }
+    };
+
+    // === DOM ELEMENTS ===
+    const elements = {
+      chatContainer: document.getElementById('chatContainer'),
+      chat: document.getElementById('chat'),
+      input: document.getElementById('input'),
+      sendBtn: document.getElementById('sendBtn'),
+      floatingButton: document.getElementById('floatingButton'),
+      clearBtn: document.getElementById('clearBtn'),
+      closeBtn: document.getElementById('closeBtn')
+    };
+
+    // === STATE MANAGEMENT ===
+    const state = {
+      isChatOpen: false,
+      conversationHistory: [],
+      isProcessing: false,
+      toggleInProgress: false,
+      lastApiCall: 0,
+      sessionId: null
+    };
+
+    // === SESSION MANAGEMENT ===
+    const sessionManager = {
+      // Generate a new session ID for each page load/refresh
+      generateNewSessionId() {
+        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      },
+
+      // Clear any existing session data
+      clearSessionData() {
+        // Remove any stored session data from localStorage
+        localStorage.removeItem('n8n_chat_session_id');
+        localStorage.removeItem('chatbot_conversation_history');
+        localStorage.removeItem('chatbot_session_data');
+        
+        // Clear sessionStorage as well
+        sessionStorage.clear();
+        
+        // Reset state
+        state.sessionId = null;
+        state.conversationHistory = [];
+      },
+
+      // Initialize a fresh session
+      initializeNewSession() {
+        this.clearSessionData();
+        state.sessionId = this.generateNewSessionId();
+        console.log('New session initialized:', state.sessionId);
+      }
+    };
+
+    // === MARKDOWN/HTML RENDERER ===
+    const markdownRenderer = {
+      init() {
+        if (typeof marked !== 'undefined') {
+          marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: false
+          });
+        }
+      },
+
+      renderContent(content) {
+        if (!content) return '';
+
+        // Don't process welcome messages or typing indicators
+        if (content.includes('<div class="welcome-message">') || 
+            content.includes('<div class="typing">')) {
+          return content;
+        }
+
+        if (typeof marked !== 'undefined') {
+          try {
+            const htmlContent = marked.parse(content);
+            
+            if (typeof DOMPurify !== 'undefined') {
+              return `<div class="markdown-content">${DOMPurify.sanitize(htmlContent)}</div>`;
+            } else {
+              return `<div class="markdown-content">${htmlContent}</div>`;
+            }
+          } catch (error) {
+            console.warn('Markdown parsing failed:', error);
+            return utils.sanitizeInput(content);
+          }
+        }
+
+        return this.basicFormatting(content);
+      },
+
+      basicFormatting(text) {
+        return utils.sanitizeInput(text)
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/`(.*?)`/g, '<code>$1</code>')
+          .replace(/\n/g, '<br>');
+      }
+    };
+
+    // === N8N WEBHOOK HANDLER ===
+    const n8nWebhookHandler = {
+      async sendMessage(userMessage, action = 'sendMessage') {
+        if (!CONFIG.N8N.WEBHOOK_URL || CONFIG.N8N.WEBHOOK_URL === 'YOUR_N8N_WEBHOOK_URL') {
+          throw new Error(CONFIG.ERRORS.WEBHOOK_MISSING);
+        }
+
+        const now = Date.now();
+        if (now - state.lastApiCall < 1000) {
+          await new Promise(resolve => setTimeout(resolve, 1000 - (now - state.lastApiCall)));
+        }
+
+        state.lastApiCall = Date.now();
+
+        // N8N expects specific parameter names
+        const payload = {
+          [CONFIG.N8N.ACTION_KEY]: action,                    // action: 'sendMessage'
+          [CONFIG.N8N.CHAT_INPUT_KEY]: userMessage,          // chatInput: the actual message
+          [CONFIG.N8N.SESSION_KEY]: this.getSessionId(),     // sessionId: for session management
+        };
+
+        // Add URL parameters as n8n Chat Trigger expects them
+        const urlParams = new URLSearchParams({
+          action: action,
+          sessionId: this.getSessionId()
+        });
+
+        const requestUrl = `${CONFIG.N8N.WEBHOOK_URL}?${urlParams.toString()}`;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.N8N.TIMEOUT);
+
+        try {
+          const response = await fetch(requestUrl, {
+            method: CONFIG.N8N.METHOD,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Origin': window.location.origin
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            await this.handleWebhookError(response);
+          }
+
+          const responseText = await response.text();
+          
+          try {
+            const data = JSON.parse(responseText);
+            return this.parseN8NResponse(data);
+          } catch (jsonError) {
+            // If response is not JSON, treat as plain text
+            return responseText || 'I received your message but couldn\'t generate a proper response.';
+          }
+
+        } catch (error) {
+          clearTimeout(timeoutId);
+          
+          if (error.name === 'AbortError') {
+            throw new Error(CONFIG.ERRORS.TIMEOUT_ERROR);
+          }
+          
+          if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('CORS')) {
+            throw new Error(CONFIG.ERRORS.CORS_ERROR);
+          }
+          
+          throw error;
+        }
+      },
+
+      parseN8NResponse(data) {
+        // Handle different n8n response formats
+        if (typeof data === 'string') {
+          return data;
+        }
+        
+        // Check for common n8n response structures
+        if (data.output) {
+          return data.output;
+        }
+        
+        if (data.response) {
+          return data.response;
+        }
+        
+        if (data.message) {
+          return data.message;
+        }
+        
+        if (data.text) {
+          return data.text;
+        }
+
+        // Check if it's an array (n8n often returns arrays)
+        if (Array.isArray(data) && data.length > 0) {
+          const firstItem = data[0];
+          if (typeof firstItem === 'string') {
+            return firstItem;
+          }
+          if (firstItem.output) return firstItem.output;
+          if (firstItem.response) return firstItem.response;
+          if (firstItem.message) return firstItem.message;
+          if (firstItem.text) return firstItem.text;
+        }
+
+        // If all else fails, stringify the response
+        try {
+          return JSON.stringify(data, null, 2);
+        } catch (e) {
+          return 'I received your message successfully, but the response format was unexpected.';
+        }
+      },
+
+      async handleWebhookError(response) {
+        const errorText = await response.text();
+        let errorMessage = CONFIG.ERRORS.GENERIC_ERROR;
+
+        switch (response.status) {
+          case 404:
+            errorMessage = 'Webhook endpoint not found. Please check your n8n webhook URL.';
+            break;
+          case 400:
+            errorMessage = 'Invalid request format. Please try a different message.';
+            break;
+          case 403:
+            errorMessage = CONFIG.ERRORS.CORS_ERROR;
+            break;
+          case 429:
+            errorMessage = CONFIG.ERRORS.RATE_LIMIT;
+            break;
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            errorMessage = 'N8N service is temporarily unavailable. Please try again later.';
+            break;
+          default:
+            if (response.status >= 500) {
+              errorMessage = 'Server error occurred. Please try again later.';
+            }
+        }
+
+        console.error('N8N Webhook Error:', response.status, errorText);
+        throw new Error(errorMessage);
+      },
+
+      getSessionId() {
+        // Always use the current session ID, don't try to load from storage
+        if (!state.sessionId) {
+          state.sessionId = sessionManager.generateNewSessionId();
+        }
+        return state.sessionId;
+      }
+    };
+
+    // === UTILITY FUNCTIONS ===
+    const utils = {
+      sanitizeInput(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      },
+
+      generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+      },
+
+      scrollToBottom() {
+        requestAnimationFrame(() => {
+          elements.chat.scrollTo({
+            top: elements.chat.scrollHeight,
+            behavior: 'smooth'
+          });
+        });
+      },
+
+      showError(message, allowRetry = false, retryCallback = null) {
+        const errorId = utils.generateId();
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let errorHtml = `
+          <div class="error-message">
+            ⚠️ ${message}
+            ${allowRetry && retryCallback ? `<button class="retry-button" onclick="handleRetry('${errorId}')">Retry</button>` : ''}
+          </div>
+        `;
+
+        const errorMessage = {
+          id: errorId,
+          sender: 'error',
+          text: errorHtml,
+          timestamp: timestamp,
+          isError: true,
+          retryCallback: retryCallback
+        };
+        
+        state.conversationHistory.push(errorMessage);
+        chatRenderer.renderConversation();
+        
+        // Auto-remove error messages after 15 seconds if no retry option
+        if (!allowRetry) {
+          setTimeout(() => {
+            state.conversationHistory = state.conversationHistory.filter(msg => msg.id !== errorId);
+            chatRenderer.renderConversation();
+          }, 15000);
+        }
+      },
+
+      debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+    };
+
+    // === GLOBAL RETRY HANDLER ===
+    window.handleRetry = function(errorId) {
+      const errorMessage = state.conversationHistory.find(msg => msg.id === errorId);
+      if (errorMessage && errorMessage.retryCallback) {
+        // Remove the error message
+        state.conversationHistory = state.conversationHistory.filter(msg => msg.id !== errorId);
+        chatRenderer.renderConversation();
+        // Execute the retry callback
+        errorMessage.retryCallback();
+      }
+    };
+
+    // === MESSAGE RENDERER ===
+    const chatRenderer = {
+      renderConversation() {
+        if (this.shouldSmoothUpdate()) {
+          this.smoothAddMessage();
+        } else {
+          this.fullRender();
+        }
+      },
+
+      shouldSmoothUpdate() {
+        const currentMessages = elements.chat.children.length;
+        const targetMessages = state.conversationHistory.length;
+        return targetMessages === currentMessages + 1;
+      },
+
+      smoothAddMessage() {
+        const lastMessage = state.conversationHistory[state.conversationHistory.length - 1];
+        const messageElement = this.createMessageElement(lastMessage, state.conversationHistory.length - 1);
+        
+        elements.chat.appendChild(messageElement);
+        
+        setTimeout(() => {
+          utils.scrollToBottom();
+        }, 100);
+      },
+
+      fullRender() {
+        elements.chat.innerHTML = '';
+        
+        state.conversationHistory.forEach((msg, index) => {
+          const messageElement = this.createMessageElement(msg, index);
+          elements.chat.appendChild(messageElement);
+        });
+
+        setTimeout(utils.scrollToBottom, 50);
+      },
+
+      createMessageElement(msg, index) {
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `message-container ${msg.sender}`;
+        messageContainer.style.animationDelay = `${Math.min(index * 0.03, 0.3)}s`;
+
+        if (msg.text && msg.text.includes('typing')) {
+          messageContainer.classList.add('typing');
+        }
+
+        if (msg.isError) {
+          messageContainer.classList.add('error');
+          const errorDiv = document.createElement('div');
+          errorDiv.innerHTML = msg.text;
+          messageContainer.appendChild(errorDiv);
+          return messageContainer;
+        }
+
+        const avatarElement = this.createAvatar(msg.sender);
+        const messageElement = this.createMessage(msg);
+
+        if (msg.sender === 'bot') {
+          messageContainer.appendChild(avatarElement);
+          messageContainer.appendChild(messageElement);
+        } else {
+          messageContainer.appendChild(messageElement);
+          messageContainer.appendChild(avatarElement);
+        }
+
+        return messageContainer;
+      },
+
+      createAvatar(sender) {
+        const avatarElement = document.createElement('div');
+        avatarElement.className = `message-avatar ${sender}`;
+        
+        if (sender === 'bot') {
+          avatarElement.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+              <path d="M352 64C352 46.3 337.7 32 320 32C302.3 32 288 46.3 288 64L288 128L192 128C139 128 96 171 96 224L96 448C96 501 139 544 192 544L448 544C501 544 544 501 544 448L544 224C544 171 501 128 448 128L352 128L352 64zM160 432C160 418.7 170.7 408 184 408L216 408C229.3 408 240 418.7 240 432C240 445.3 229.3 456 216 456L184 456C170.7 456 160 445.3 160 432zM280 432C280 418.7 290.7 408 304 408L336 408C349.3 408 360 418.7 360 432C360 445.3 349.3 456 336 456L304 456C290.7 456 280 445.3 280 432zM400 432C400 418.7 410.7 408 424 408L456 408C469.3 408 480 418.7 480 432C480 445.3 469.3 456 456 456L424 456C410.7 456 400 445.3 400 432zM224 240C250.5 240 272 261.5 272 288C272 314.5 250.5 336 224 336C197.5 336 176 314.5 176 288C176 261.5 197.5 240 224 240zM368 288C368 261.5 389.5 240 416 240C442.5 240 464 261.5 464 288C464 314.5 442.5 336 416 336C389.5 336 368 314.5 368 288zM64 288C64 270.3 49.7 256 32 256C14.3 256 0 270.3 0 288L0 384C0 401.7 14.3 416 32 416C49.7 416 64 401.7 64 384L64 288zM608 256C590.3 256 576 270.3 576 288L576 384C576 401.7 590.3 416 608 416C625.7 416 640 401.7 640 384L640 288C640 270.3 625.7 256 608 256z"/>
+            </svg>
+          `;
+        } else {
+          avatarElement.innerHTML = `
+            <svg viewBox="0 0 24 24">
+              <path d="M12 12C14.21 12 16 10.21 16 8S14.21 4 12 4 8 5.79 8 8 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
+            </svg>
+          `;
+        }
+        
+        return avatarElement;
+      },
+
+      createMessage(msg) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${msg.sender}`;
+        
+        let content = '';
+        
+        if (msg.sender === 'user' && msg.text) {
+          content = utils.sanitizeInput(msg.text);
+        } else {
+          content = markdownRenderer.renderContent(msg.text);
+        }
+        
+        const timestamp = `<div class="timestamp">${msg.timestamp}</div>`;
+        messageElement.innerHTML = content + timestamp;
+        
+        return messageElement;
+      }
+    };
+
+    // === CHAT CONTROLLER ===
+    const chatController = {
+      async initializeChat() {
+        // Initialize a completely fresh session on each page load
+        sessionManager.initializeNewSession();
+        
+        // Start with only the welcome message
+        state.conversationHistory = [CONFIG.WELCOME_MESSAGE];
+        chatRenderer.renderConversation();
+        
+        console.log('Chat initialized with fresh session. No previous conversation loaded.');
+      },
+
+      clearConversation() {
+        // Create a new session when manually clearing
+        sessionManager.initializeNewSession();
+        
+        // Reset conversation to welcome message only
+        state.conversationHistory = [CONFIG.WELCOME_MESSAGE];
+        chatRenderer.renderConversation();
+        elements.input.focus();
+        
+        console.log('Conversation cleared and new session created:', state.sessionId);
+      },
+
+      toggleChat: utils.debounce(function() {
+        if (state.toggleInProgress) {
+          return;
+        }
+        
+        state.toggleInProgress = true;
+        
+        if (state.isChatOpen) {
+          chatController.closeChat();
+        } else {
+          chatController.openChat();
+        }
+        
+        setTimeout(() => {
+          state.toggleInProgress = false;
+        }, 500);
+      }, 100),
+
+      openChat() {
+        if (state.isChatOpen) return;
+        
+        state.isChatOpen = true;
+        elements.chatContainer.classList.remove('hidden');
+        elements.floatingButton.classList.add('active');
+        
+        if (window.innerWidth <= 768) {
+          elements.floatingButton.style.display = 'none';
+        }
+        
+        setTimeout(() => {
+          if (elements.input && typeof elements.input.focus === 'function') {
+            elements.input.focus();
+          }
+        }, 400);
+      },
+
+      closeChat() {
+        if (!state.isChatOpen) return;
+        
+        state.isChatOpen = false;
+        elements.chatContainer.classList.add('hidden');
+        elements.floatingButton.classList.remove('active');
+        elements.floatingButton.style.display = 'flex';
+        
+        setTimeout(() => {
+          if (elements.floatingButton && typeof elements.floatingButton.focus === 'function') {
+            elements.floatingButton.focus();
+          }
+        }, 200);
+      },
+
+      async sendMessage() {
+        const text = elements.input.value.trim();
+
+        if (!text || state.isProcessing) {
+          if (!state.isProcessing && !text) {
+            elements.input.classList.add('shake');
+            setTimeout(() => elements.input.classList.remove('shake'), 300);
+          }
+          elements.input.focus();
+          return;
+        }
+
+        state.isProcessing = true;
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const userMessage = {
+          sender: 'user',
+          text: text,
+          timestamp: timestamp
+        };
+        
+        state.conversationHistory.push(userMessage);
+        chatRenderer.renderConversation();
+
+        const messageToSend = text;
+        elements.input.value = '';
+        this.setLoadingState(true);
+
+        try {
+          await this.processN8NResponse(messageToSend, timestamp);
+        } catch (error) {
+          console.error('Error processing n8n response:', error);
+          this.handleN8NError(error, messageToSend);
+        }
+      },
+
+      async processN8NResponse(messageText, timestamp) {
+        // Show typing indicator
+        const typingMessage = {
+          sender: 'bot',
+          text: '<div class="typing" role="status" aria-live="polite" aria-label="Bot is typing"><span></span><span></span><span></span></div>',
+          timestamp: timestamp
+        };
+
+        state.conversationHistory.push(typingMessage);
+        chatRenderer.renderConversation();
+
+        try {
+          const n8nResponse = await n8nWebhookHandler.sendMessage(messageText, 'sendMessage');
+          
+          const botMessage = {
+            sender: 'bot',
+            text: n8nResponse,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+
+          // Replace typing indicator with actual response
+          state.conversationHistory[state.conversationHistory.length - 1] = botMessage;
+          
+          // Update the last message container
+          const lastMessageContainer = elements.chat.lastElementChild;
+          if (lastMessageContainer) {
+            const messageElement = lastMessageContainer.querySelector('.message');
+            if (messageElement) {
+              messageElement.innerHTML = markdownRenderer.renderContent(n8nResponse) + 
+                `<div class="timestamp">${botMessage.timestamp}</div>`;
+              lastMessageContainer.classList.remove('typing');
+            }
+          }
+          
+          this.setLoadingState(false);
+          elements.input.focus();
+          utils.scrollToBottom();
+
+        } catch (error) {
+          // Remove typing indicator on error
+          state.conversationHistory.pop();
+          chatRenderer.renderConversation();
+          throw error;
+        }
+      },
+
+      handleN8NError(error, messageText) {
+        this.setLoadingState(false);
+        
+        const retryCallback = () => {
+          elements.input.value = messageText;
+          this.sendMessage();
+        };
+
+        utils.showError(error.message, true, retryCallback);
+        elements.input.focus();
+      },
+
+      setLoadingState(isLoading) {
+        state.isProcessing = isLoading;
+        elements.sendBtn.disabled = isLoading;
+        elements.input.disabled = isLoading;
+        
+        if (isLoading) {
+          elements.sendBtn.classList.add('loading');
+        } else {
+          elements.sendBtn.classList.remove('loading');
+        }
+      }
+    };
+
+    // === RESPONSIVE HANDLER ===
+    const responsiveHandler = {
+      handleResize: utils.debounce(function() {
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+          if (state.isChatOpen) {
+            elements.floatingButton.style.display = 'none';
+          } else {
+            elements.floatingButton.style.display = 'flex';
+          }
+        } else {
+          elements.floatingButton.style.display = 'flex';
+        }
+      }, 250)
+    };
+
+    // === EVENT LISTENERS ===
+    const eventListeners = {
+      init() {
+        elements.floatingButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          chatController.toggleChat();
+        });
+
+        elements.clearBtn.addEventListener('click', () => {
+          chatController.clearConversation();
+        });
+
+        elements.closeBtn.addEventListener('click', () => {
+          chatController.closeChat();
+        });
+
+        elements.sendBtn.addEventListener('click', () => {
+          chatController.sendMessage();
+        });
+
+        elements.input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !state.isProcessing) {
+            e.preventDefault();
+            chatController.sendMessage();
+          }
+        });
+
+        window.addEventListener('resize', responsiveHandler.handleResize);
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && state.isChatOpen) {
+            chatController.closeChat();
+          }
+        });
+
+        elements.chatContainer.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') {
+            this.handleTabNavigation(e);
+          }
+        });
+
+        // Clear conversation data on page unload to ensure fresh start
+        window.addEventListener('beforeunload', () => {
+          sessionManager.clearSessionData();
+        });
+      },
+
+      handleTabNavigation(e) {
+        const focusableElements = elements.chatContainer.querySelectorAll(
+          'button, input, [tabindex="0"]'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    // === INITIALIZATION ===
+    async function initialize() {
+      markdownRenderer.init();
+      await chatController.initializeChat();
+      eventListeners.init();
+      responsiveHandler.handleResize();
+      
+      state.isChatOpen = false;
+      elements.chatContainer.classList.add('hidden');
+      elements.floatingButton.classList.remove('active');
+      elements.floatingButton.style.display = 'flex';
+
+      console.log('AI Chatbot with N8N integration initialized successfully!');
+      console.log('Fresh session created - no previous conversation will be remembered');
+      
+      if (!CONFIG.N8N.WEBHOOK_URL || CONFIG.N8N.WEBHOOK_URL === 'YOUR_N8N_WEBHOOK_URL') {
+        console.warn('⚠️ N8N webhook URL is not configured. Please set CONFIG.N8N.WEBHOOK_URL with your actual webhook URL.');
+        console.log('Example: https://yourname.app.n8n.cloud/webhook/your-webhook-id');
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+      initialize();
+    }
+
+    // === GLOBAL EXPORTS ===
+    window.ChatbotConfig = CONFIG;
+    window.ChatbotState = state;
+    window.N8NHandler = n8nWebhookHandler;
+    window.SessionManager = sessionManager;
+  </script>
+</body>
+</html>
