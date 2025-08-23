@@ -46,3 +46,12 @@ Example:
   ```
 webhookUrl: "https://yourname.app.n8n.cloud/webhook/513107b3-xxxx"
   ```
+-----------
+📜 License
+
+-This project is open-source under the MIT License.
+
+🤝 Contributions
+
+- Feel free to open issues, suggest features, or submit pull requests. Let’s build smarter web experiences together!
+
