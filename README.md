@@ -11,6 +11,8 @@ This chatbot is designed to integrate with **n8n workflows** via webhook URLs, m
 |red-dark  | red night Chatbot UI <img width="1920" height="1080" alt="redui" src="https://github.com/user-attachments/assets/8edf3d3d-9ea9-44f2-a716-03b67313795e" />|
 |Green | Green  Chatbot UI <img width="2560" height="1440" alt="gree-ui1" src="https://github.com/user-attachments/assets/a4657891-bb49-48a2-af8a-f271d012bda0" />|
 |  Blue-dark  | Blue night Chatbot UI <img width="2560" height="1440" alt="blue-dark" src="https://github.com/user-attachments/assets/2e99e172-8728-4c88-829c-2bdd6586db30" />|
+|Purple| modern purple  Chatbot UI <img width="3280" height="1712" alt="modern" src="https://github.com/user-attachments/assets/3a5b7436-5d94-49ce-8c06-0629b89e55cf" />
+|
 
 Lightweight HTML-based AI assistant widget for WordPress. Compatible with N8N, customizable , and visual themes included.
 
